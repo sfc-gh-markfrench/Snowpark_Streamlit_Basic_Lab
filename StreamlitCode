@@ -1,0 +1,87 @@
+# Snowpark for Python API reference: https://docs.snowflake.com/en/developer-guide/snowpark/reference/python/index.html
+# Snowpark for Python Developer Guide: https://docs.snowflake.com/en/developer-guide/snowpark/python/index.html
+# Streamlit docs: https://docs.streamlit.io/
+
+# Part 1 - import required libraries
+import json
+import altair as alt
+import pandas as pd
+from snowflake.snowpark.session import Session
+from snowflake.snowpark.functions import col, sum, call_builtin
+from snowflake.snowpark import functions as F
+
+import streamlit as st
+from datetime import datetime, date
+
+APP_ICON_URL = "https://www.carlogos.org/car-logos/nissan-logo-2020-black.png"
+
+# Streamlit config
+st.set_page_config("Nissan", APP_ICON_URL, "centered")
+st.write("<style>[data-testid='stMetricLabel'] {min-height: 0.5rem !important}</style>", unsafe_allow_html=True)
+st.sidebar.image(APP_ICON_URL, width=130)
+st.sidebar.title("My First Nissan Application")
+
+#Just for some fun - check out Streamlit's Status elements https://docs.streamlit.io/library/api-reference/status
+st.balloons()
+
+# Part 2 - let's add Snowflake data
+vCreds = '/Users/dshaw/Documents/Creds/cred.json'
+
+# Snowflake snowpark connection
+with open(vCreds) as f:data = json.load(f)
+connection_parameters = { "account": data['account'],
+                         "user": data['user'],
+                         "password": data['password']}
+session = Session.builder.configs(connection_parameters).create()
+
+
+session.sql("use database streamlit").collect()
+df_budget = session.table("aaa.public.BUDGET_ALLOCATIONS_AND_ROI").toPandas() 
+df_revenue = session.table("aaa.public.MONTHLY_REVENUE").toPandas()
+
+st.dataframe(df_budget)
+st.dataframe(df_revenue)
+
+# Part 3 - let's add a filter and chart the Snowflake data within Streamlit using Streamlit Chart Elements https://docs.streamlit.io/library/api-reference/charts
+
+months = ['']
+months.extend(list(df_budget['MONTH'].unique()))
+selected_month = st.selectbox("Select Month", options=months, index=0)
+if selected_month == '':
+    st.dataframe(df_budget)
+    st.dataframe(df_revenue)
+    st.bar_chart(df_revenue[['YEAR','REVENUE']],x='YEAR', y='REVENUE')
+else:
+    st.dataframe(df_budget.loc[df_budget['MONTH'] == selected_month])
+    st.dataframe(df_revenue.loc[df_revenue['MONTH'] == datetime.strptime(selected_month, '%B').month])
+    filtered_df =df_revenue.loc[df_revenue['MONTH'] == datetime.strptime(selected_month, '%B').month]
+    st.bar_chart(filtered_df[['YEAR','REVENUE']],x='YEAR', y='REVENUE')
+    
+# Part 4 - let's make this even better!
+
+col1, col2 = st.sidebar.columns(2)
+with st.container():
+    with col1:
+        input_dim = st.selectbox("Dimension",('CAMPAIGN','CHANNEL'))
+    with col2:
+        input_measure = st.selectbox("Measure",('TOTAL_CLICKS','TOTAL_COST','ADS_SERVED'))
+
+input_date = st.sidebar.date_input("Filter to dates greater than or equal to",date(2019, 1, 1)).strftime("%Y-%m")
+
+df_spend = session.table('aaa.public.CAMPAIGN_SPEND') \
+                .withColumn('DATE',call_builtin("to_char", col('DATE'),'YYYY-MM')) \
+                .filter(col('DATE') >= input_date) \
+                .groupBy('DATE', input_dim) \
+                .agg(sum(input_measure).alias(input_measure)) \
+                .collect()
+
+st.vega_lite_chart(df_spend, {
+        'width': 565,
+        'height': 400,
+        'mark': {'type': 'area', 'tooltip': True},
+        'encoding': {
+            'x': {'field': 'DATE'},
+            'y': {'field': input_measure.upper(), 'type': 'quantitative'},
+            'color': {'field': input_dim.upper()},
+         },
+     })  
