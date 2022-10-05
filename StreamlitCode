@@ -13,13 +13,13 @@ from snowflake.snowpark import functions as F
 import streamlit as st
 from datetime import datetime, date
 
-APP_ICON_URL = "https://www.carlogos.org/car-logos/nissan-logo-2020-black.png"
+APP_ICON_URL = "https://findvectorlogo.com/wp-content/uploads/2019/10/wolfspeed-a-cree-company-vector-logo.png"
 
 # Streamlit config
-st.set_page_config("Nissan", APP_ICON_URL, "centered")
+st.set_page_config("Wolfspeed", APP_ICON_URL, "centered")
 st.write("<style>[data-testid='stMetricLabel'] {min-height: 0.5rem !important}</style>", unsafe_allow_html=True)
 st.sidebar.image(APP_ICON_URL, width=130)
-st.sidebar.title("My First Nissan Application")
+st.sidebar.title("My First Wolfspeed Application")
 
 #Just for some fun - check out Streamlit's Status elements https://docs.streamlit.io/library/api-reference/status
 st.balloons()
