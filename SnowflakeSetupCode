@@ -1,3 +1,10 @@
+use warehouse HACKATHON_WH;
+create or replace database STREAMLIT;
+use database STREAMLIT;
+create or replace schema DEMO;
+use schema DEMO;
+
+
 CREATE or REPLACE file format csvformat
   skip_header = 1
   type = 'CSV';
