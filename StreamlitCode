@@ -25,7 +25,7 @@ st.sidebar.title("My First Wolfspeed Application")
 st.balloons()
 
 # Part 2 - let's add Snowflake data
-vCreds = '/Users/dshaw/Documents/Creds/cred.json'
+vCreds = '/Users/mfrench/Documents/Creds/cred.json'
 
 # Snowflake snowpark connection
 with open(vCreds) as f:data = json.load(f)
